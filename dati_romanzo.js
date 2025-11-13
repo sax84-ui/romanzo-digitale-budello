@@ -41,11 +41,15 @@ const bookData = {
             title: "Prologo: Il Budello di tu Mà ",
             content: `Cronache di un Regno Assurdo.
 
-C’era una volta, in un angolo dimenticato sia dalle mappe che dal buon senso, il Regno del Budello di tu Mà. Qui la fisica era solo un’opinione, le montagne profumavano di fritto e le foreste sussuravano insulti ai passanti con la grazia di una zia polemica.
+        C'era una volta, in un angolo dimenticato sia dalle mappe che dal buon senso, il Regno del Budello di tu Mà.
 
-La vita scorreva tra fiumi di birra nera e tempeste di coriandoli di sesamo, in un caos che avrebbe fatto impallidire persino il traffico di Napoli.
+        Qui la fisica era solo un'opinione discutibile, le montagne profumavano di fritto mattutino e le foreste sussurravano insulti ai passanti con la grazia di una zia polemica durante un pranzo domenicale. La vita scorreva tra fiumi di birra nera e tempeste di coriandoli di sesamo, in un caos che avrebbe fatto impallidire persino il traffico di Napoli all'ora di punta.
 
-Le città poggiavano su fondamenta di pane tostato, i castelli sfoggiavano torri di mortadella e le piazze ospitavano duelli a colpi di rutto, dove il vincitore veniva incoronato con una corona di cipolla. Gli abitanti? Un bestiario degno di una televendita notturna: ex eroi con la gloria scaduta, centaure assemblate con più entusiasmo che precisione, piovre e leprecauni che rappavano meglio di quanto sapessero nuotare, barbari filosofi che lucidavano il machete mentre discutevano di etica, e dinosauri bendati guidati dal cordyceps.`
+        Le città poggiavano su fondamenta di pane tostato raffermo, i castelli sfoggiavano torri di mortadella stagionata e le piazze ospitavano duelli a colpi di rutto, dove il vincitore veniva incoronato con una corona di cipolla caramellata.
+        
+        Gli abitanti? Un bestiario degno di una televendita notturna andata storta: ex eroi con la gloria scaduta come yogurt dimenticato, bestie assemblate con più entusiasmo che precisione ingegneristica, piovre e leprecauni che rappavano meglio di quanto sapessero nuotare o fare magie, barbari filosofi che lucidavano il machete mentre discutevano di etica kantiana, e dinosauri bendati guidati dal cordyceps come taxi impazziti.
+        
+        Nessuno era davvero normale. E chi lo era? Veniva spedito altrove con un biglietto di sola andata e gli auguri di buon viaggio.`
 		},
 
 		{
