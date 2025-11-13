@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Il Mio Romanzo - Libreria Digitale</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Fonts: Inter (Moderno) e Merriweather (Classico/Serif) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <script>
+        // Configurazione Tailwind per i temi personalizzati
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        sepia: {
+                            bg: '#f4ecd8',
+                            text: '#433422',
+                            ui: '#eaddcf'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Merriweather', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Stili CSS - Non modificati */
+        body, .theme-transition {
+            transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease;
+        }
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #1f2937;
+            --ui-bg: #f3f4f6;
+            --ui-border: #e5e7eb;
+            --accent: #059669;
+        }
+        [data-theme="dark"] {
+            --bg-color: #111827;
+            --text-color: #f3f4f6;
+            --ui-bg: #1f2937;
+            --ui-border: #374151;
+        }
+        [data-theme="sepia"] {
+            --bg-color: #f4ecd8;
+            --text-color: #433422;
+            --ui-bg: #eaddcf;
+            --ui-border: #d3c4b1;
+            --accent: #8c6b4a;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+        .ui-panel {
+            background-color: var(--ui-bg);
+            border-color: var(--ui-border);
+        }
+        #readingProgress {
+            width: 0%;
+            height: 4px;
+            background-color: var(--accent);
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 100;
+            transition: width 0.1s;
+        }
+        .book-content p {
+            margin-bottom: 1.5em;
+            line-height: 1.8;
+            text-indent: 1.5em;
+        }
+        .settings-select {
+            background-color: rgba(0,0,0,0.1);
+            border-radius: 6px;
+            padding: 4px 8px;
+            border: 1px solid rgba(128, 128, 128, 0.1);
+            font-size: 0.875rem;
+            outline-color: var(--accent);
+        }
+        .settings-select option {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+        .content-fade {
+            transition: opacity 0.3s ease-out;
+        }
+        #coverImage {
+            width: 256px;
+            height: 384px;
+            object-fit: cover;
+            background-color: var(--ui-bg);
+            border-color: var(--ui-border);
+        }
+        #coverImageFallback {
+            border-color: var(--ui-border);
+        }
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            transition: opacity 0.3s ease;
+        }
+        #tocModal {
+            max-height: 80vh;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        #tocList a {
+            border-bottom: 1px solid var(--ui-border);
+            transition: background-color 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        #tocList a:hover {
+            background-color: rgba(128, 128, 128, 0.1);
+        }
+        #tocList a.toc-current {
+            background-color: rgba(128, 128, 128, 0.1);
+            color: var(--accent);
+            font-weight: 600;
+        }
+        #tocList a.toc-current::before {
+            content: '▶ ';
+            color: var(--accent);
+            flex-shrink: 0;
+        }
+        .toc-cache-icon {
+            font-size: 0.9em;
+            opacity: 0.7;
+            flex-shrink: 0;
+            margin-left: 1rem;
+        }
+        #continuousPlayToggle[data-checked="true"] {
+            background-color: var(--accent);
+        }
+        #continuousPlayToggle[data-checked="false"] {
+            background-color: rgba(128, 128, 128, 0.3);
+        }
+        #continuousPlayToggle[data-checked="true"] span {
+            transform: translateX(22px);
+        }
+        #continuousPlayToggle[data-checked="false"] span {
+            transform: translateX(4px);
+        }
+        .cache-btn {
+            font-size: 0.7rem; /* 11px */
+            padding: 4px;
+            text-align: center;
+            width: 100%;
+            border-radius: 4px;
+            background-color: rgba(0,0,0,0.1);
+            opacity: 0.6;
+            transition: all 0.2s;
+        }
+        .cache-btn:hover {
+            opacity: 1;
+            background-color: rgba(0,0,0,0.2);
+        }
+        .cache-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        #cacheStatus {
+            color: var(--accent);
+        }
+
+        /* --- NUOVA REGOLA SCROLL IMPOSTAZIONI --- */
+        #settingsPanel {
+            /* Calcola l'altezza massima: 100% dell'altezza dello schermo (vh) 
+              meno ~60px per l'header in alto.
+              Aggiunge lo scorrimento verticale se il contenuto è più alto.
+            */
+            max-height: calc(100vh - 60px);
+            overflow-y: auto;
+        }
+        /* --- FINE NUOVA REGOLA --- */
+
+    </style>
+</head>
+<body class="flex flex-col min-h-screen" data-theme="dark">
+
+    <!-- Barra Progresso Lettura -->
+    <div id="readingProgress"></div>
+
+    <!-- Header -->
+    <header class="ui-panel border-b sticky top-0 z-40 shadow-sm transition-colors duration-300">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+            
+            <!-- Titolo / Bottone Home -->
+            <div id="homeBtn" class="flex items-center gap-3 cursor-pointer group">
+                <div class="w-8 h-8 rounded bg-emerald-600 flex items-center justify-center text-white font-serif font-bold shadow-lg group-hover:scale-105 transition-transform">R</div>
+                <div>
+                    <h1 id="headerBookTitle" class="font-bold text-sm md:text-base leading-tight opacity-90">Il Mio Romanzo</h1>
+                    <span id="currentChapterLabel" class="text-xs opacity-60">Copertina</span>
+                </div>
+            </div>
+
+            <!-- Controlli Header -->
+            <div class="flex items-center gap-2">
+                
+                <!-- Bottone Indice -->
+                <button id="btnToc" class="p-2 rounded-full hover:bg-black/10 transition-colors" title="Indice Capitoli" aria-label="Apri indice dei capitoli">
+                    <svg class="w-6 h-6 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+                </button>
+                
+                <!-- Bottone Settings -->
+                <button id="btnSettings" class="p-2 rounded-full hover:bg-black/10 transition-colors" title="Impostazioni di lettura" aria-label="Apri impostazioni di lettura">
+                    <svg class="w-6 h-6 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826 3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Pannello Impostazioni (Hidden by default) -->
+        <div id="settingsPanel" class="hidden border-t ui-panel absolute w-full left-0 shadow-xl p-6 transform origin-top transition-all">
+            <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-8">
+                
+                <!-- Temi -->
+                <div class="space-y-3">
+                    <h3 class="text-xs font-bold uppercase opacity-50 tracking-wider">Tema</h3>
+                    <div class="flex gap-3">
+                        <button onclick="app.setTheme('light')" class="w-10 h-10 rounded-full border-2 border-gray-300 bg-white shadow-sm hover:scale-110 transition-transform" title="Giorno" aria-label="Imposta tema Giorno"></button>
+                        <button onclick="app.setTheme('sepia')" class="w-10 h-10 rounded-full border-2 border-[#d3c4b1] bg-[#f4ecd8] shadow-sm hover:scale-110 transition-transform" title="Seppia" aria-label="Imposta tema Seppia"></button>
+                        <button onclick="app.setTheme('dark')" class="w-10 h-10 rounded-full border-2 border-gray-600 bg-[#111827] shadow-sm hover:scale-110 transition-transform" title="Notte" aria-label="Imposta tema Notte"></button>
+                    </div>
+                </div>
+
+                <!-- Font -->
+                <div class="space-y-3" role="radiogroup" aria-labelledby="font-label">
+                    <h3 id="font-label" class="text-xs font-bold uppercase opacity-50 tracking-wider">Font</h3>
+                    <div class="flex bg-black/10 rounded-lg p-1">
+                        <button id="fontSansBtn" onclick="app.setFont('sans')" role="radio" aria-checked="true" class="flex-1 py-1 rounded text-sm font-sans hover:bg-white/20 transition-colors">Moderno</button>
+                        <button id="fontSerifBtn" onclick="app.setFont('serif')" role="radio" aria-checked="false" class="flex-1 py-1 rounded text-sm font-serif hover:bg-white/20 transition-colors">Classico</button>
+                    </div>
+                </div>
+
+                <!-- Dimensione -->
+                <div class="space-y-3">
+                    <h3 class="text-xs font-bold uppercase opacity-50 tracking-wider">Dimensione Testo</h3>
+                    <div class="flex items-center gap-4">
+                        <button onclick="app.changeFontSize(-1)" class="w-8 h-8 rounded bg-black/10 hover:bg-black/20 flex items-center justify-center font-bold text-sm" aria-label="Riduci dimensione testo">A-</button>
+                        <span id="fontSizeDisplay" class="text-sm font-mono opacity-70 w-12 text-center" aria-live="polite">18px</span>
+                        <button onclick="app.changeFontSize(1)" class="w-8 h-8 rounded bg-black/10 hover:bg-black/20 flex items-center justify-center font-bold text-lg" aria-label="Aumenta dimensione testo">A+</button>
+                    </div>
+                </div>
+                
+                <!-- Impostazioni Audio -->
+                <div class="space-y-3">
+                    <h3 class="text-xs font-bold uppercase opacity-50 tracking-wider">Audiolibro e Offline</h3>
+                    <div class="flex flex-col gap-2">
+                        <!-- Selettore Voce -->
+                        <select id="voiceSelect" onchange="app.setVoice(this.value)" class="settings-select w-full" aria-label="Seleziona voce narrante">
+                            <!-- Voci caricate dinamicamente -->
+                        </select>
+                        <!-- Selettore Velocità -->
+                        <select id="speedSelect" onchange="app.setPlaybackRate(this.value)" class="settings-select w-full" aria-label="Seleziona velocità di riproduzione">
+                            <option value="0.75">Velocità 0.75x</option>
+                            <option value="1.0">Velocità 1.0x</option>
+                            <option value="1.25">Velocità 1.25x</option>
+                            <option value="1.5">Velocità 1.5x</option>
+                            <option value="2.0">Velocità 2.0x</option>
+                        </select>
+                        
+                        <!-- Toggle Riproduzione Continua -->
+                        <div class="flex items-center justify-between pt-2 mt-2 border-t border-[var(--ui-border)]">
+                            <label id="continuous-label" for="continuousPlayToggle" class="text-sm font-medium opacity-80">Riproduzione continua</label>
+                            <button id="continuousPlayToggle" onclick="app.toggleContinuousPlay()" role="switch" aria-checked="false" aria-labelledby="continuous-label" class="relative inline-flex items-center h-6 rounded-full w-11 transition-colors" data-checked="false">
+                                <span class="inline-block w-4 h-4 transform bg-white rounded-full transition-transform"></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Area Contenuto (Testo) -->
+    <main class="flex-grow max-w-3xl mx-auto w-full px-4 py-8 md:py-12">
+        
+        <!-- Contenitore Pagina Copertina -->
+        <div id="coverContainer" class="w-full flex flex-col items-center justify-center mb-10 md:mb-12 content-fade">
+            <div class="text-center mb-8">
+                <h1 id="mainBookTitle" class="text-4xl md:text-5xl font-serif font-bold mb-2" style="color: var(--text-color);">
+                    Caricamento...
+                </h1>
+                <p id="mainBookAuthor" class="text-lg opacity-70" style="color: var(--text-color);">
+                    di...
+                </p>
+            </div>
+            <div class="rounded-lg shadow-xl overflow-hidden">
+                <img id="coverImage" 
+                     src="" 
+                     alt="Copertina del romanzo"
+                     class="hidden"
+                >
+                <div id="coverImageFallback" class="w-64 h-96 ui-panel bg-opacity-50 rounded-lg flex items-center justify-center border-2 border-dashed">
+                    <span class="opacity-60 font-serif text-center p-4">Immagine Copertina</span>
+                </div>
+            </div>
+            <button id="startReadingBtn" class="mt-8 px-6 py-3 bg-emerald-600 text-white font-semibold rounded-lg shadow-lg hover:bg-emerald-500 transition-colors transform hover:scale-105">
+                Inizia a Leggere
+            </button>
+        </div>
+
+        <!-- Contenitore Capitoli -->
+        <article id="bookContainer" class="min-h-[60vh] content-fade" aria-live="polite">
+            <h2 id="chapterTitle" class="text-3xl md:text-4xl font-bold mb-8 pb-4 border-b border-gray-700/20 theme-transition">
+                Caricamento...
+            </h2>
+            <div id="chapterContent" class="book-content text-lg md:text-xl transition-all duration-300">
+                <!-- Il testo verrà iniettato qui -->
+            </div>
+        </article>
+        
+        <!-- Navigazione Capitoli a fondo pagina -->
+        <div id="footerNav" class="mt-16 flex justify-between items-center pt-8 border-t border-gray-700/20">
+            <button id="prevBtnFooter" class="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-black/5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+                <span>←</span> <span class="text-sm font-semibold">Precedente</span>
+            </button>
+            <span class="text-xs opacity-50">Fine Capitolo</span>
+            <button id="nextBtnFooter" class="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-black/5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+                <span class="text-sm font-semibold">Successivo</span> <span>→</span>
+            </button>
+        </div>
+    </main>
+
+    <!-- Player Audio Footer (Sticky) -->
+    <footer class="ui-panel border-t sticky bottom-0 z-50 shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.2)] transition-transform duration-300" id="audioFooter">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+            
+            <div class="flex items-center gap-4 flex-1">
+                <!-- Play/Pause Button -->
+                <button id="playBtn" class="relative w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-full bg-emerald-600 text-white shadow-lg hover:bg-emerald-500 hover:scale-105 transition-all disabled:bg-gray-500 disabled:cursor-wait disabled:transform-none" aria-label="Riproduci audiolibro">
+                    <svg id="iconPlay" class="w-5 h-5 translate-x-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" /></svg>
+                    <svg id="iconPause" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+                    <svg id="iconLoading" class="w-5 h-5 animate-spin hidden" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+
+                </button>
+                
+                <div class="flex flex-col overflow-hidden">
+                    <span class="text-[10px] uppercase tracking-wider font-bold opacity-60">Audiolibro (Locale)</span>
+                    <span id="audioStatusText" class="text-sm font-medium truncate" aria-live="polite">Pronto per la lettura</span>
+                </div>
+            </div>
+
+            <div class="w-auto"></div>
+
+        </div>
+    </footer>
+    
+    <!-- Modale Indice -->
+    <div id="modalOverlay" class="modal-overlay fixed inset-0 z-[60] hidden opacity-0" onclick="app.toggleToc(false)"></div>
+
+    <!-- Modifica v2.8: Aggiunto 'flex flex-col' -->
+    <div id="tocModal" role="dialog" aria-modal="true" aria-labelledby="tocTitle" class="ui-panel fixed top-1/2 left-1/2 z-[70] w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl shadow-2xl p-6 hidden opacity-0 -translate-y-1/4 flex flex-col">
+        
+        <!-- Questo div (titolo) si adatta (flex-shrink: 0) -->
+        <div class="flex justify-between items-center mb-4 pb-4 border-b border-[var(--ui-border)]">
+            <h2 id="tocTitle" class="text-xl font-bold font-serif">Indice dei Capitoli</h2>
+            <button id="tocCloseBtn" class="p-2 rounded-full hover:bg-black/10 transition-colors" title="Chiudi" aria-label="Chiudi indice" onclick="app.toggleToc(false)">
+                <svg class="w-6 h-6 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        
+        <!-- Modifica v2.8: Rimosso 'max-h-[60vh]' -->
+        <nav id="tocList" class="overflow-y-auto pr-2">
+            <!-- Lista capitoli generata da JS -->
+        </nav>
+    </div>
+
+    <!-- 
+      MODIFICA V3 (PER NETLIFY):
+      1. Carichiamo il file separato che contiene i dati del romanzo.
+      2. Questo deve essere caricato PRIMA dello script principale dell'app.
+    -->
+    <script src="dati_romanzo.js"></script>
+
+
+    <script>
+        // --- DATI DEL ROMANZO ---
+        
+        /* MODIFICA V3 (PER NETLIFY):
+          La costante 'bookData' è stata rimossa da qui e spostata 
+          nel file 'dati_romanzo.js' che viene caricato qui sopra.
+          L'app la troverà automaticamente perché quel file 
+          viene caricato per primo.
+        */
+
+
+        // --- STATO APPLICAZIONE ---
+        let scrollTimer = null;
+        let synthesis = window.speechSynthesis;
+        let utterance = null;
+        
+        
+        const app = {
+            state: {
+                chapterIndex: -1,
+                theme: 'dark',
+                fontSize: 18,
+                fontFamily: 'sans',
+                voice: null, // Verrà settato all'avvio
+                playbackRate: 1.0,
+                scrollPositions: {},
+                isContinuousPlay: false,
+                
+                // Nuovi stati per l'audio
+                isPlaying: false,
+                isPaused: false,
+            },
+            
+            saveSettings() {
+                // Non salviamo l'oggetto 'voice', ma solo il suo 'voiceURI' (nome unico)
+                const settingsToSave = { ...this.state };
+                if (this.state.voice) {
+                    settingsToSave.voiceURI = this.state.voice.voiceURI;
+                }
+                delete settingsToSave.voice; 
+                localStorage.setItem('novelApp_settings', JSON.stringify(settingsToSave));
+            },
+
+            loadSettings() {
+                const saved = localStorage.getItem('novelApp_settings');
+                let savedVoiceURI = null;
+                if (saved) {
+                    const savedState = JSON.parse(saved);
+                    savedVoiceURI = savedState.voiceURI; // Prendiamo il nome della voce salvata
+                    delete savedState.voiceURI; // Rimuoviamo la proprietà temporanea
+                    this.state = { ...this.state, ...savedState };
+                }
+                const savedScrolls = localStorage.getItem('novelApp_scrollPositions');
+                if (savedScrolls) {
+                    this.state.scrollPositions = JSON.parse(savedScrolls);
+                }
+                return savedVoiceURI; // Restituiamo il nome della voce da cercare
+            },
+
+            saveScrollPosition() {
+                if (this.state.chapterIndex < 0) return;
+                this.state.scrollPositions[this.state.chapterIndex] = window.scrollY;
+                localStorage.setItem('novelApp_scrollPositions', JSON.stringify(this.state.scrollPositions));
+            },
+
+            // Inizializzazione
+            init() {
+                // 1. Carica le impostazioni (eccetto la voce)
+                const savedVoiceURI = this.loadSettings();
+                
+                // 2. Popola la lista voci e imposta la voce
+                this.populateVoiceList(savedVoiceURI);
+
+                // 3. Applica tutte le impostazioni (inclusa la voce ora caricata)
+                this.applySettingsUI();
+                
+                // 4. Inizializza l'UI con i dati del romanzo (che ora vengono dal file .js)
+                // Controllo di sicurezza: verifica che 'bookData' esista
+                if (typeof bookData === 'undefined' || !bookData) {
+                    console.error("Errore: 'bookData' non trovato. Assicurati che 'dati_romanzo.js' sia caricato correttamente.");
+                    // Non usiamo alert() perché Netlify potrebbe bloccarlo
+                    document.body.innerHTML = `<div style="padding: 2rem; color: red; font-family: sans-serif;">
+                        <h1>Errore critico: impossibile caricare i dati del romanzo.</h1>
+                        <p>Assicurati che il file 'dati_romanzo.js' sia stato caricato correttamente su Netlify e si trovi nella stessa cartella di questo file HTML.</p>
+                        </div>`;
+                    return;
+                }
+
+                const mainTitleEl = document.getElementById('mainBookTitle');
+                mainTitleEl.innerHTML = `
+                    ${bookData.mainTitle}
+                    <span class="block text-2xl md:text-3xl opacity-80 mt-2">${bookData.subTitle}</span>
+                `;
+                document.getElementById('mainBookAuthor').textContent = `di ${bookData.author}`;
+                document.getElementById('headerBookTitle').textContent = bookData.mainTitle;
+                document.getElementById('tocTitle').textContent = bookData.mainTitle;
+                
+                // Attacca il listener PRIMA di caricare l'immagine per gestire errori
+                document.getElementById('coverImage').addEventListener('error', () => this.handleImageError());
+                
+                this.loadCoverImage();
+                this.populateToc(); 
+                this.renderPage();
+                this.setupEventListeners();
+            },
+
+            // Popola il menu delle voci
+            populateVoiceList(savedVoiceURI) {
+                const select = document.getElementById('voiceSelect');
+                select.innerHTML = '<option value="">Caricamento voci...</option>';
+                
+                // Ottenere le voci è asincrono
+                const loadVoices = () => {
+                    let voices = synthesis.getVoices();
+                    if (voices.length === 0) {
+                        select.innerHTML = '<option value="">Nessuna voce trovata</option>';
+                        return;
+                    }
+                    
+                    select.innerHTML = ''; // Pulisci il menu
+                    let defaultVoice = null;
+                    let savedVoice = null;
+
+                    // Filtra per voci italiane
+                    const itaVoices = voices.filter(v => v.lang.startsWith('it'));
+                    
+                    (itaVoices.length > 0 ? itaVoices : voices).forEach(voice => {
+                        const option = document.createElement('option');
+                        option.textContent = `${voice.name} (${voice.lang})`;
+                        option.value = voice.voiceURI;
+                        select.appendChild(option);
+                        
+                        // Controlla se questa è la voce salvata
+                        if (voice.voiceURI === savedVoiceURI) {
+                            savedVoice = voice;
+                        }
+                        // Imposta un default (la prima italiana o la prima in assoluto)
+                        if (!defaultVoice && (itaVoices.length > 0 || voices.length > 0)) {
+                            defaultVoice = voice;
+                        }
+                    });
+
+                    // Seleziona la voce: 1. Salvata, 2. Default, 3. Nessuna
+                    if (savedVoice) {
+                        this.state.voice = savedVoice;
+                    } else if (defaultVoice) {
+                        this.state.voice = defaultVoice;
+                    }
+                    
+                    if (this.state.voice) {
+                        select.value = this.state.voice.voiceURI;
+                    }
+                };
+
+                // 'voiceschanged' è il modo corretto per aspettare il caricamento
+                if (synthesis.onvoiceschanged !== undefined) {
+                    synthesis.onvoiceschanged = loadVoices;
+                }
+                
+                // --- AGGIUNTA FIX v3.1 ---
+                // Eseguiamo un controllo immediato.
+                // A volte (specialmente in Chrome), se le voci sono già in cache,
+                // l'evento 'onvoiceschanged' non viene sparato.
+                let initialVoices = synthesis.getVoices();
+                if (initialVoices.length > 0) {
+                    loadVoices();
+                } else if (synthesis.onvoiceschanged === undefined) {
+                    // Fallback per browser (come vecchi Firefox) che non hanno l'evento
+                    setTimeout(loadVoices, 250); // Diamo un po' più di tempo
+                }
+                // --- FINE FIX ---
+            },
+
+            // Applica le impostazioni visive
+            applySettingsUI() {
+                document.body.setAttribute('data-theme', this.state.theme);
+                const content = document.getElementById('chapterContent');
+                const title = document.getElementById('chapterTitle');
+                content.style.fontSize = `${this.state.fontSize}px`;
+                document.getElementById('fontSizeDisplay').textContent = `${this.state.fontSize}px`;
+                const fontSansBtn = document.getElementById('fontSansBtn');
+                const fontSerifBtn = document.getElementById('fontSerifBtn');
+                if (this.state.fontFamily === 'serif') {
+                    content.classList.remove('font-sans'); content.classList.add('font-serif');
+                    title.classList.remove('font-sans'); title.classList.add('font-serif');
+                    fontSerifBtn.classList.add('bg-white/30');
+                    fontSansBtn.classList.remove('bg-white/30');
+                    fontSerifBtn.setAttribute('aria-checked', 'true');
+                    fontSansBtn.setAttribute('aria-checked', 'false');
+                } else {
+                    content.classList.remove('font-serif'); content.classList.add('font-sans');
+                    title.classList.remove('font-serif'); title.classList.add('font-sans');
+                    fontSansBtn.classList.add('bg-white/30');
+                    fontSerifBtn.classList.remove('bg-white/30');
+                    fontSansBtn.setAttribute('aria-checked', 'true');
+                    fontSerifBtn.setAttribute('aria-checked', 'false');
+                }
+                
+                // Applica la selezione della voce e della velocità nel menu
+                const voiceSelect = document.getElementById('voiceSelect');
+                if (this.state.voice && voiceSelect.options.length > 1) {
+                    voiceSelect.value = this.state.voice.voiceURI;
+                }
+                document.getElementById('speedSelect').value = this.state.playbackRate;
+                
+                const toggle = document.getElementById('continuousPlayToggle');
+                toggle.dataset.checked = this.state.isContinuousPlay;
+                toggle.setAttribute('aria-checked', this.state.isContinuousPlay);
+            },
+            
+            // --- LOGICA DI VISUALIZZAZIONE ---
+            loadCoverImage() {
+                const img = document.getElementById('coverImage');
+                const fallback = document.getElementById('coverImageFallback');
+                if (bookData.coverImageUrl) {
+                    img.src = bookData.coverImageUrl;
+                    img.classList.remove('hidden');
+                    fallback.classList.add('hidden');
+                } else {
+                    img.classList.add('hidden');
+                    fallback.classList.remove('hidden');
+                }
+            },
+            handleImageError() {
+                const img = document.getElementById('coverImage');
+                const fallback = document.getElementById('coverImageFallback');
+                img.classList.add('hidden');
+                fallback.classList.remove('hidden');
+            },
+            
+            populateToc() {
+                const tocList = document.getElementById('tocList');
+                tocList.innerHTML = '';
+                
+                // Link Copertina
+                const homeLink = document.createElement('a');
+                homeLink.href = "#";
+                homeLink.dataset.index = -1;
+                homeLink.className = "block text-lg font-serif p-4";
+                homeLink.innerHTML = `<span>Copertina</span>`;
+                tocList.appendChild(homeLink);
+                
+                // Link Capitoli
+                for (let i = 0; i < bookData.chapters.length; i++) {
+                    const ch = bookData.chapters[i];
+                    const link = document.createElement('a');
+                    link.href = "#";
+                    link.dataset.index = i;
+                    link.className = "block text-lg font-serif p-4";
+                    link.innerHTML = `
+                        <span class="flex-grow"><span class="opacity-60 mr-2">${i+1}.</span> ${ch.title.split(':')[0]}</span>
+                    `;
+                    tocList.appendChild(link);
+                }
+                this.updateTocSelection();
+            },
+            
+            updateTocSelection() {
+                const links = document.querySelectorAll('#tocList a');
+                links.forEach(link => {
+                    if (parseInt(link.dataset.index) === this.state.chapterIndex) {
+                        link.classList.add('toc-current');
+                    } else {
+                        link.classList.remove('toc-current');
+                    }
+                });
+            },
+            
+            toggleToc(show) {
+                const overlay = document.getElementById('modalOverlay');
+                const modal = document.getElementById('tocModal');
+                if (show) {
+                    this.updateTocSelection();
+                    overlay.classList.remove('hidden');
+                    modal.classList.remove('hidden');
+                    setTimeout(() => {
+                        overlay.classList.remove('opacity-0');
+                        modal.classList.remove('opacity-0', '-translate-y-1/4');
+                    }, 10);
+                } else {
+                    overlay.classList.add('opacity-0');
+                    modal.classList.add('opacity-0', '-translate-y-1/4');
+                    setTimeout(() => {
+                        overlay.classList.add('hidden');
+                        modal.classList.add('hidden');
+                    }, 300);
+                }
+            },
+            
+            renderPage() {
+                const index = this.state.chapterIndex;
+                const coverContainer = document.getElementById('coverContainer');
+                const bookContainer = document.getElementById('bookContainer');
+                const audioFooter = document.getElementById('audioFooter');
+                const footerNav = document.getElementById('footerNav');
+                const readingProgress = document.getElementById('readingProgress');
+                if (index === -1) {
+                    coverContainer.classList.remove('hidden');
+                    bookContainer.classList.add('hidden');
+                    audioFooter.classList.add('hidden');
+                    footerNav.classList.add('hidden');
+                    readingProgress.classList.add('hidden');
+                    document.getElementById('currentChapterLabel').textContent = "Copertina";
+                } else {
+                    coverContainer.classList.add('hidden');
+                    bookContainer.classList.remove('hidden');
+                    audioFooter.classList.remove('hidden');
+                    footerNav.classList.remove('hidden');
+                    readingProgress.classList.remove('hidden');
+                    this.renderChapterContent(index);
+                }
+                this.updateTocSelection();
+            },
+
+            renderChapterContent(index) {
+                const ch = bookData.chapters[index];
+                document.getElementById('chapterTitle').textContent = ch.title;
+                document.getElementById('currentChapterLabel').textContent = ch.title.split(':')[0];
+                const html = ch.content.split('\n')
+                    .map(l => l.trim()).filter(l => l.length > 0)
+                    .map(l => `<p>${l}</p>`).join('');
+                document.getElementById('chapterContent').innerHTML = html;
+                document.getElementById('prevBtnFooter').disabled = index === 0;
+                document.getElementById('nextBtnFooter').disabled = index === bookData.chapters.length - 1;
+            },
+
+            // --- CONTROLLI ---
+            setTheme(theme) {
+                this.state.theme = theme;
+                this.applySettingsUI();
+                this.saveSettings();
+            },
+            setFont(family) {
+                this.state.fontFamily = family;
+                this.applySettingsUI();
+                this.saveSettings();
+            },
+            changeFontSize(delta) {
+                this.state.fontSize = Math.max(14, Math.min(28, this.state.fontSize + delta));
+                this.applySettingsUI();
+                this.saveSettings();
+            },
+            
+            setVoice(voiceURI) {
+                const newVoice = synthesis.getVoices().find(v => v.voiceURI === voiceURI);
+                if (newVoice) {
+                    this.state.voice = newVoice;
+                    this.saveSettings();
+                    // Se l'audio è in riproduzione o in pausa, riavvia con la nuova voce
+                    if (this.state.isPlaying || this.state.isPaused) {
+                        this.stopAudio();
+                        this.startAudio();
+                    }
+                }
+            },
+            
+            setPlaybackRate(rate) {
+                const newRate = parseFloat(rate);
+                this.state.playbackRate = newRate;
+                this.saveSettings();
+                
+                // Se l'audio è in riproduzione o in pausa, riavvia per applicare la velocità
+                if (this.state.isPlaying || this.state.isPaused) {
+                    const wasPaused = this.state.isPaused;
+                    this.stopAudio();
+                    this.startAudio();
+                    
+                    // Se era in pausa, rimettilo in pausa
+                    if (wasPaused) {
+                         // Diamo un micro-delay al browser per processare
+                        setTimeout(() => this.pauseAudio(), 50);
+                    }
+                }
+            },
+            
+            toggleContinuousPlay() {
+                this.state.isContinuousPlay = !this.state.isContinuousPlay;
+                this.applySettingsUI();
+                this.saveSettings();
+            },
+            
+            changePage(index, autoPlay = false) {
+                if (index < -1 || index >= bookData.chapters.length) return;
+                this.saveScrollPosition();
+                const bookContainer = document.getElementById('bookContainer');
+                const coverContainer = document.getElementById('coverContainer');
+                bookContainer.style.opacity = 0;
+                coverContainer.style.opacity = 0;
+                
+                this.stopAudio(); // Ferma l'audio precedente
+                
+                setTimeout(() => {
+                    this.state.chapterIndex = index;
+                    this.renderPage();
+                    this.saveSettings();
+                    const savedScroll = this.state.scrollPositions[this.state.chapterIndex];
+                    if (savedScroll > 0 && this.state.chapterIndex >= 0) {
+                        window.scrollTo(0, savedScroll);
+                    } else {
+                        window.scrollTo(0, 0);
+                    }
+                    if (index === -1) {
+                        coverContainer.style.opacity = 1;
+                    } else {
+                        bookContainer.style.opacity = 1;
+                    }
+                    if (autoPlay) {
+                        this.startAudio(); // Avvia il nuovo capitolo
+                    }
+                }, 300);
+            },
+            
+            // --- SISTEMA AUDIO (TTS LOCALE) ---
+
+            toggleAudio() {
+                if (this.state.chapterIndex < 0) return; // Non fare nulla sulla copertina
+
+                if (this.state.isPlaying && !this.state.isPaused) {
+                    this.pauseAudio();
+                } else if (this.state.isPlaying && this.state.isPaused) {
+                    this.resumeAudio();
+                } else {
+                    this.startAudio();
+                }
+            },
+
+            startAudio() {
+                // Prevenzione ri-avvio se già attivo
+                if (this.state.isPlaying) return;
+
+                // Controllo sicurezza: capitolo e voce
+                if (this.state.chapterIndex < 0 || !this.state.voice) {
+                    this.setAudioUI('error', 'Voce non pronta');
+                    return;
+                }
+
+                // Pulizia forzata per evitare blocchi
+                if (synthesis.speaking || synthesis.pending) {
+                    synthesis.cancel();
+                }
+
+                this.setAudioUI('loading');
+
+                const ch = bookData.chapters[this.state.chapterIndex];
+                const text = `${ch.title}. ${ch.content}`;
+
+                utterance = new SpeechSynthesisUtterance(text);
+                utterance.voice = this.state.voice;
+                utterance.rate = this.state.playbackRate;
+                utterance.pitch = 1;
+
+                utterance.onstart = () => {
+                    this.state.isPlaying = true;
+                    this.state.isPaused = false;
+                    this.setAudioUI('playing');
+                };
+
+                utterance.onpause = () => {
+                    // Questo evento è inaffidabile, ci affidiamo alla nostra logica
+                };
+
+                utterance.onresume = () => {
+                    // Anche questo è inaffidabile
+                };
+
+                utterance.onend = () => {
+                    const wasPlaying = this.state.isPlaying;
+                    this.stopAudio(false); // Pulisci senza aggiornare UI (lo fa il check sotto)
+
+                    const isLastChapter = this.state.chapterIndex === bookData.chapters.length - 1;
+                    
+                    if (wasPlaying && this.state.isContinuousPlay && !isLastChapter) {
+                        this.changePage(this.state.chapterIndex + 1, true);
+                    } else {
+                        this.setAudioUI('stopped');
+                    }
+                };
+
+                utterance.onerror = (e) => {
+                    console.error("Errore SpeechSynthesis:", e);
+                    this.setAudioUI('error', 'Errore audio');
+                    this.state.isPlaying = false;
+                    this.state.isPaused = false;
+                };
+
+                // Diamo un micro-delay al browser per evitare "race conditions"
+                setTimeout(() => {
+                    if (!utterance) return; // Se nel frattempo abbiamo stoppato
+                    synthesis.speak(utterance);
+                }, 50);
+            },
+
+            pauseAudio() {
+                if (this.state.isPlaying && !this.state.isPaused) {
+                    synthesis.pause();
+                    this.state.isPaused = true;
+                    this.setAudioUI('paused');
+                }
+            },
+
+            resumeAudio() {
+                if (this.state.isPlaying && this.state.isPaused) {
+                    synthesis.resume();
+                    this.state.isPaused = false;
+                    this.setAudioUI('playing');
+                }
+            },
+            
+            stopAudio() {
+                // Ferma e resetta tutto
+                if (synthesis) {
+                    synthesis.cancel();
+                }
+                utterance = null;
+                this.state.isPlaying = false;
+                this.state.isPaused = false;
+                this.setAudioUI('stopped');
+            },
+
+            setAudioUI(state, message = "") {
+                const playBtn = document.getElementById('playBtn');
+                const icons = { 
+                    play: document.getElementById('iconPlay'), 
+                    pause: document.getElementById('iconPause'), 
+                    load: document.getElementById('iconLoading') 
+                };
+                const status = document.getElementById('audioStatusText');
+                
+                Object.values(icons).forEach(i => i.classList.add('hidden'));
+                playBtn.disabled = false;
+                
+                if (state === 'loading') {
+                    icons.load.classList.remove('hidden');
+                    playBtn.disabled = true;
+                    status.textContent = "Caricamento audio...";
+                    playBtn.setAttribute('aria-label', 'Caricamento audiolibro in corso');
+                } else if (state === 'playing') {
+                    icons.pause.classList.remove('hidden');
+                    status.textContent = "In riproduzione";
+                    playBtn.setAttribute('aria-label', 'Metti in pausa audiolibro');
+                } else if (state === 'paused') {
+                    icons.play.classList.remove('hidden');
+                    status.textContent = "In pausa";
+                    playBtn.setAttribute('aria-label', 'Riprendi riproduzione audiolibro');
+                } else if (state === 'error') {
+                    icons.play.classList.remove('hidden');
+
+                    status.textContent = message || "Si è verificato un errore";
+                    playBtn.setAttribute('aria-label', 'Riproduci audiolibro');
+                } else { // 'stopped'
+                    icons.play.classList.remove('hidden');
+                    status.textContent = "Pronto per la lettura";
+                    playBtn.setAttribute('aria-label', 'Riproduci audiolibro');
+                }
+            },
+
+            // Listeners
+            setupEventListeners() {
+                document.getElementById('btnSettings').onclick = () => {
+                    document.getElementById('settingsPanel').classList.toggle('hidden');
+                };
+                document.getElementById('playBtn').onclick = () => this.toggleAudio();
+                document.getElementById('homeBtn').onclick = () => this.changePage(-1);
+                document.getElementById('startReadingBtn').onclick = () => this.changePage(0);
+                document.getElementById('btnToc').onclick = () => this.toggleToc(true);
+                document.getElementById('tocCloseBtn').onclick = () => this.toggleToc(false);
+                document.getElementById('modalOverlay').onclick = () => this.toggleToc(false);
+                
+                document.getElementById('tocList').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const link = e.target.closest('a');
+                    if (link && link.dataset.index) {
+                        this.toggleToc(false);
+                        this.changePage(parseInt(link.dataset.index));
+                    }
+                });
+                document.getElementById('prevBtnFooter').onclick = () => this.changePage(this.state.chapterIndex - 1);
+                document.getElementById('nextBtnFooter').onclick = () => this.changePage(this.state.chapterIndex + 1);
+                
+                window.addEventListener('scroll', () => {
+                    const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+                    const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+                    if (height > 0) {
+                        const scrolled = (winScroll / height) * 100;
+                        document.getElementById('readingProgress').style.width = scrolled + "%";
+                    } else {
+                        document.getElementById('readingProgress').style.width = "0%";
+                    }
+                    if (scrollTimer) clearTimeout(scrollTimer);
+                    scrollTimer = setTimeout(() => {
+                        app.saveScrollPosition();
+                        scrollTimer = null;
+                    }, 500);
+                });
+
+                // Aggiungi un listener per pulire l'audio se l'utente chiude la pagina
+                window.addEventListener('beforeunload', () => {
+                    if (app.state.isPlaying) {
+                        app.stopAudio();
+                    }
+                });
+            }
+        };
+
+        // Avvia l'app
+        document.addEventListener('DOMContentLoaded', () => app.init());
+    </script>
+</body>
+</html>
